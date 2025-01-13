@@ -36,3 +36,4 @@ class LoginSerializer(serializers.Serializer):
         data['user'] = user
 
         return data
+    
