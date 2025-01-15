@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from .serializer import RegisterSerializer, LoginSerializer
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser
 from .models import Profile
 
 
@@ -43,32 +44,55 @@ class loginUser(APIView):
             profile = user.profile
             role = profile.role
 
-            return Response({'token':token.key, 'username':user.username, 'role':role}, status = status.HTTP_200_OK)
+            first_name = user.first_name
+            last_name = user.last_name
+            age = profile.age
+
+            return Response({'token':token.key,
+                            'username':user.username, 
+                            'role':role, 
+                            'first_name' : first_name,
+                            'last_name': last_name,
+                            'age' : age}, status = status.HTTP_200_OK)
         
         return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
-    
 
 
 class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
-    # Obtener el perfil del usuario autenticado
-    def get(self, request, *args, **kwargs):
-        try:
-            profile = Profile.objects.get(user=request.user)
-            serializer = ProfileSerializer(profile)
-            return Response(serializer.data)
-        except Profile.DoesNotExist:
-            return Response({"detail": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)
+    def get(self, request):
+        
+        profile = request.user.profile
+        return Response({
+            'username': request.user.username,
+            'first_name': request.user.first_name,
+            'last_name': request.user.last_name,
+            'age': profile.age,
+            'profile_picture': profile.profile_picture.url if profile.profile_picture else None
+        }, status=status.HTTP_200_OK)
 
-    # Actualizar el perfil del usuario autenticado
-    def put(self, request, *args, **kwargs):
-        try:
-            profile = Profile.objects.get(user=request.user)
-            serializer = ProfileSerializer(profile, data=request.data, partial=True)  # 'partial=True' permite actualizar parcialmente el perfil
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        except Profile.DoesNotExist:
-            return Response({"detail": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)
+    def put(self, request):
+        profile = request.user.profile
+
+        profile_picture = request.FILES.get('profile_picture')
+        if profile_picture:
+            profile.profile_picture = profile_picture
+
+        age = request.data.get('age')
+        if age:
+            try:
+                profile.age = int(age)
+            except ValueError:
+                return Response(
+                    {"error": "Age must be a valid number."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        profile.save()
+
+        return Response({
+            'message': 'Profile updated successfully',
+            'profile_picture': profile.profile_picture.url if profile.profile_picture else None
+        }, status=status.HTTP_200_OK)
