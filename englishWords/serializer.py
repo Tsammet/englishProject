@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Category, Words
+from .models import Category, Words, GameScore
 
 class CategorySerializer(serializers.ModelSerializer):
 
@@ -26,3 +26,10 @@ class WordSerializer(serializers.ModelSerializer):
         if Words.objects.filter(word = value).exists():
             raise serializers.ValidationError('The word already exists')
         return value
+    
+
+class GameScoreSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GameScore
+        fields = ['user', 'score', 'category', 'created_at']
+        read_only_fields = ['user', 'date']

@@ -1,10 +1,12 @@
 from rest_framework import viewsets
-from .models import Category, Words
-from .serializer import CategorySerializer, WordSerializer
+from .models import Category, Words, GameScore
+from .serializer import CategorySerializer, WordSerializer, GameScoreSerializer
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from random import sample
 from rest_framework.decorators import action
+from rest_framework import status
+
 
 class CategoryViewSet(viewsets.ViewSet):
 
@@ -129,3 +131,35 @@ class WordViewSet(viewsets.ViewSet):
         word = Words.objects.get(pk = pk)
         word.delete()
         return Response('Word was deleted')
+    
+
+class GameScoreViewSet(viewsets.ViewSet):
+    queryset = GameScore.objects.all()
+    serializer_class = GameScoreSerializer
+    permission_classes = [IsAuthenticated]
+
+    def create(self, request):
+        # Obtenemos los datos del cuerpo de la solicitud
+        score = request.data.get('score')
+        category = request.data.get('category')
+
+        # Validación de los datos
+        if score is None or category is None:
+            return Response({"detail": "Score and category are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Creación del puntaje en la base de datos
+        game_score = GameScore.objects.create(user=request.user, score=score, category=category)
+        
+        # Serialización de los datos creados
+        serializer = GameScoreSerializer(game_score)
+
+        # Respuesta con los datos del puntaje creado
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+
+    @action(detail=False, methods=['get'])
+    def get_user_scores(self, request):
+        user = request.user  # Obtén el usuario logueado
+        game_scores = GameScore.objects.filter(user=user)  # Filtra por el usuario
+        serializer = GameScoreSerializer(game_scores, many=True)
+        return Response(serializer.data)

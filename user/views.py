@@ -3,10 +3,11 @@ from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny
 from rest_framework import status
 from rest_framework.response import Response
-from .serializer import RegisterSerializer, LoginSerializer
+from .serializer import RegisterSerializer, LoginSerializer, GameScoreSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
 from .models import Profile
+from englishWords.models import GameScore
 
 
 class registerUser(APIView):
@@ -47,8 +48,10 @@ class loginUser(APIView):
             first_name = user.first_name
             last_name = user.last_name
             age = profile.age
+            
 
             return Response({'token':token.key,
+                             'user_id' : user.id,
                             'username':user.username, 
                             'role':role, 
                             'first_name' : first_name,
@@ -63,14 +66,22 @@ class ProfileView(APIView):
     parser_classes = [MultiPartParser, FormParser]
 
     def get(self, request):
-        
         profile = request.user.profile
+
+        # Obtener los puntajes de los juegos asociados al usuario
+        game_scores = GameScore.objects.filter(user=request.user)
+
+        # Serializar los puntajes de los juegos
+        game_scores_serializer = GameScoreSerializer(game_scores, many=True)
+
+        # Devolver los datos del perfil y los puntajes
         return Response({
             'username': request.user.username,
             'first_name': request.user.first_name,
             'last_name': request.user.last_name,
             'age': profile.age,
-            'profile_picture': profile.profile_picture.url if profile.profile_picture else None
+            'profile_picture': profile.profile_picture.url if profile.profile_picture else None,
+            'game_scores': game_scores_serializer.data  # Agregar los puntajes de los juegos
         }, status=status.HTTP_200_OK)
 
     def put(self, request):

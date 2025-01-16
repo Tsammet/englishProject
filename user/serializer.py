@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Profile
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
+from englishWords.models import GameScore
 
 class RegisterSerializer(serializers.ModelSerializer):
     role = serializers.ChoiceField(choices=Profile.USER_ROLE_CHOICES, default = 'user')
@@ -45,3 +46,10 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = ['age', 'profile_picture']
+
+
+
+class GameScoreSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GameScore
+        fields = ['id', 'score', 'category', 'created_at']  # Incluye los campos que quieres mostrar
