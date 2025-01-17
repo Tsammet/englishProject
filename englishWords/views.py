@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from random import sample
 from rest_framework.decorators import action
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
 
 
 class CategoryViewSet(viewsets.ViewSet):
@@ -132,11 +133,15 @@ class WordViewSet(viewsets.ViewSet):
         word.delete()
         return Response('Word was deleted')
     
+class GameScorePagination(PageNumberPagination):
+    page_size = 10 
+
 
 class GameScoreViewSet(viewsets.ViewSet):
     queryset = GameScore.objects.all()
     serializer_class = GameScoreSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = GameScorePagination
 
     def create(self, request):
         # Obtenemos los datos del cuerpo de la solicitud
@@ -159,7 +164,10 @@ class GameScoreViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'])
     def get_user_scores(self, request):
-        user = request.user  # Obtén el usuario logueado
-        game_scores = GameScore.objects.filter(user=user)  # Filtra por el usuario
-        serializer = GameScoreSerializer(game_scores, many=True)
-        return Response(serializer.data)
+        user = request.user 
+        game_scores = GameScore.objects.filter(user=user)
+        
+        paginator = GameScorePagination()
+        paginated_scores = paginator.paginate_queryset(game_scores, request)
+        serializer = GameScoreSerializer(paginated_scores, many=True)
+        return  paginator.get_paginated_response(serializer.data)
