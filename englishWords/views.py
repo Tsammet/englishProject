@@ -171,3 +171,5 @@ class GameScoreViewSet(viewsets.ViewSet):
         paginated_scores = paginator.paginate_queryset(game_scores, request)
         serializer = GameScoreSerializer(paginated_scores, many=True)
         return  paginator.get_paginated_response(serializer.data)
+
+        
