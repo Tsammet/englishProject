@@ -27,6 +27,8 @@ class registerUser(APIView):
             return Response({'token' : token.key, 'user': serializer.data}, status = status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
+    
+
 
 class loginUser(APIView):
 
@@ -61,6 +63,7 @@ class loginUser(APIView):
         return Response(serializer.errors, status = status.HTTP_400_BAD_REQUEST)
 
 
+
 class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
@@ -68,20 +71,17 @@ class ProfileView(APIView):
     def get(self, request):
         profile = request.user.profile
 
-        # Obtener los puntajes de los juegos asociados al usuario
         game_scores = GameScore.objects.filter(user=request.user)
 
-        # Serializar los puntajes de los juegos
         game_scores_serializer = GameScoreSerializer(game_scores, many=True)
 
-        # Devolver los datos del perfil y los puntajes
         return Response({
             'username': request.user.username,
             'first_name': request.user.first_name,
             'last_name': request.user.last_name,
             'age': profile.age,
             'profile_picture': profile.profile_picture.url if profile.profile_picture else None,
-            'game_scores': game_scores_serializer.data  # Agregar los puntajes de los juegos
+            'game_scores': game_scores_serializer.data
         }, status=status.HTTP_200_OK)
 
     def put(self, request):
