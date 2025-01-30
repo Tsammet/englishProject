@@ -44,7 +44,6 @@ class LoginSerializer(serializers.Serializer):
         return data
 
 
-
 class GameScoreSerializer(serializers.ModelSerializer):
     class Meta:
         model = GameScore
